@@ -8,6 +8,7 @@ import app from'../app.js';
 
 import deb from'debug'
 import http from 'http';
+import logger from '../utils/logger.js';
 const debug = deb('appointment-booking:server');
 
 /**
@@ -27,11 +28,11 @@ const server = http.createServer(app);
  * Listen on provided port, on all network interfaces.
  */
 
-server.listen(port,()=>{
-  console.log(`server started on port ${port}` )
-});
-server.on('error', onError);
-server.on('listening', onListening);
+// server.listen(port,()=>{
+//   logger.info(`server started on port ${port}` )
+// });
+// server.on('error', onError);
+// server.on('listening', onListening);
 
 /**
  * Normalize a port into a number, string, or false.
@@ -62,17 +63,17 @@ let shuttingDown = false;
  
  const shutdown = (signal, value) => {
    if (shuttingDown) {
-     console.log(`Already shutting down. Received ${signal} again`);
+     logger.info(`Already shutting down. Received ${signal} again`);
      return;
    }
    shuttingDown = true
-   console.log(`Received ${signal}. Shutting down gracefully`)
+   logger.info(`Received ${signal}. Shutting down gracefully`)
    server.close((err) => {
      if (err) {
-       console.error("Error closing server", err)
+       logger.error("Error closing server", err)
        process.exit(1)
      } else {
-       console.log('server closed. Exiting the process.')
+       logger.info('server closed. Exiting the process.')
        process.exit(0)
      }
    })
@@ -80,7 +81,7 @@ let shuttingDown = false;
  
  Object.keys(signals).forEach((signal) => {
    process.on(signal, () => {
-     console.log(`Recieved ${signal}`)
+     logger.info(`Recieved ${signal}`)
      shutdown(signal, signals[signal])
    })
  })
@@ -101,11 +102,11 @@ function onError(error) {
   // handle specific listen errors with friendly messages
   switch (error.code) {
     case 'EACCES':
-      console.error(bind + ' requires elevated privileges');
+      logger.error(bind + ' requires elevated privileges');
       process.exit(1);
       break;
     case 'EADDRINUSE':
-      console.error(bind + ' is already in use');
+      logger.error(bind + ' is already in use');
       process.exit(1);
       break;
     default:
@@ -124,3 +125,19 @@ function onListening() {
     : 'port ' + addr.port;
   debug('Listening on ' + bind);
 }
+const startServer = async () => {
+  try {
+    logger.info(`Attempting to Start server on port ${port}`)
+    // await connectToDb()
+    // await initialzeDbSchema()
+    logger.info(`Starting server on port ${port}`)
+    server.listen(port);
+    server.on('error', onError);
+    server.on('listening', onListening);
+  } catch (error) {
+    logger.error('Failed during server startup process: ', error)
+    process.exit(1)
+  }
+}
+
+startServer()
