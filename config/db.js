@@ -110,14 +110,31 @@ const initialzeDbSchema = async () => {
       `CREATE INDEX IF NOT EXISTS idx_time_slots_provider ON time_slots(provider_id)`
     );
     //-- Quick search by email
-    await client.query("CREATE INDEX IF NOT EXISTS idx_providers_email ON service_providers(email)")
+    await client.query(
+      "CREATE INDEX IF NOT EXISTS idx_providers_email ON service_providers(email)"
+    );
     //Find all of a client's appointments
-    await client.query("CREATE INDEX IF NOT EXISTS idx_appointment_client ON appointment(client_id)")
+    await client.query(
+      "CREATE INDEX IF NOT EXISTS idx_appointment_client ON appointment(client_id)"
+    );
     //Find a reservation from a slot
-    await client.query("CREATE INDEX IF NOT EXISTS idx_appointment_timeslot ON appointment(time_slot_id)")
+    await client.query(
+      "CREATE INDEX IF NOT EXISTS idx_appointment_timeslot ON appointment(time_slot_id)"
+    );
 
-    logger.info("successfully created index")
+    logger.info("successfully created index");
 
+    await client.query(`
+      CREATE OR REPLACE FUNCTION update_updated_at_column()
+      RETURNS TRIGGER AS $$
+      BEGIN
+         NEW.updated_at = NOW();
+         RETURN NEW;
+      END;
+      $$ language 'plpgsql';
+  `);
+    logger.debug("update_updated_at_column function ensured.");
+    
   } catch (error) {
     logger.error(`Error while initializing the schema`, error);
     process.exit(1);
