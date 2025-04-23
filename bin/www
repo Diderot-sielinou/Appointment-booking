@@ -52,6 +52,38 @@ function normalizePort(val) {
 
   return false;
 }
+const signals = {
+  'SIGHUP': 1,
+  'SIGINT': 2,
+  'SIGTERM': 15
+};
+
+let shuttingDown = false;
+ 
+ const shutdown = (signal, value) => {
+   if (shuttingDown) {
+     console.log(`Already shutting down. Received ${signal} again`);
+     return;
+   }
+   shuttingDown = true
+   console.log(`Received ${signal}. Shutting down gracefully`)
+   server.close((err) => {
+     if (err) {
+       console.error("Error closing server", err)
+       process.exit(1)
+     } else {
+       console.log('server closed. Exiting the process.')
+       process.exit(0)
+     }
+   })
+ }
+ 
+ Object.keys(signals).forEach((signal) => {
+   process.on(signal, () => {
+     console.log(`Recieved ${signal}`)
+     shutdown(signal, signals[signal])
+   })
+ })
 
 /**
  * Event listener for HTTP server "error" event.
