@@ -5,6 +5,7 @@
  */
 
 import app from'../app.js';
+import { connectToDb, initialzeDbSchema } from '../config/db.js';
 
 import deb from'debug'
 import http from 'http';
@@ -128,8 +129,8 @@ function onListening() {
 const startServer = async () => {
   try {
     logger.info(`Attempting to Start server on port ${port}`)
-    // await connectToDb()
-    // await initialzeDbSchema()
+    await connectToDb()
+    await initialzeDbSchema()
     logger.info(`Starting server on port ${port}`)
     server.listen(port);
     server.on('error', onError);
