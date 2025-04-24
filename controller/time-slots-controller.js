@@ -32,7 +32,6 @@ export async function createTimeSlotHandle(req, res, next) {
         .json({ message: "A time slot already exists for this period" });
     }
 
-
     const timeSlotInsertQuery = `INSERT INTO time_slots (provider_id,start_time,duration_minutes)
                             VALUES ($1,$2::timestamptz,$3)
                             RETURNING *`;
@@ -54,5 +53,21 @@ export async function createTimeSlotHandle(req, res, next) {
     return res.status(error.status || 500).json({
       message: error.message || "Server error while creating the time slot",
     });
+  }
+}
+
+export async function getAllTimeSlotHandle(req, res, next) {
+  const providerId = req.user.id;
+  try {
+    const getAllTimeSlotQUery = `SELECT start_time,duration_minutes,is_reserved  FROM time_slots 
+                                 WHERE provider_id = $1
+                                 ORDER BY start_time `;
+    const getAllTimeSlotResult = await query(getAllTimeSlotQUery,[providerId])
+    const result = getAllTimeSlotResult.rows
+    logger.info(`get all time slot create by service provider with id: ${providerId}`)
+    res.status(200).json(result)
+  } catch (error) {
+    logger.error(`Error get all  time slot for provider: ${providerId}  `)
+    return res.status(error.status||500).json({message:error.message||"Server error while get all time slot"})
   }
 }
