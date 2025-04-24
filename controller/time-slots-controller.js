@@ -71,12 +71,10 @@ export async function getAllTimeSlotHandle(req, res, next) {
     res.status(200).json(result);
   } catch (error) {
     logger.error(`Error get all  time slot for provider: ${providerId}  `);
-    return res
-      .status(error.status || 500)
-      .json({
-        message: error.message || "Server error while get all time slot",
-        code: "SERVER_ERROR",
-      });
+    return res.status(error.status || 500).json({
+      message: error.message || "Server error while get all time slot",
+      code: "SERVER_ERROR",
+    });
   }
 }
 
@@ -101,12 +99,10 @@ export async function deletTimeSlotHandle(req, res, next) {
       logger.warn(
         `you cannot delete a time slot that has already been booked time slot id ${timeSlotId}`
       );
-      return res
-        .status(409)
-        .json({
-          message: "you cannot delete a time slot that has already been booked",
-          code: "TIMESLOT_BOOKED",
-        });
+      return res.status(409).json({
+        message: "you cannot delete a time slot that has already been booked",
+        code: "TIMESLOT_BOOKED",
+      });
     }
 
     const deleteTimeSlotQuery = `DELETE FROM time_slots
@@ -125,11 +121,64 @@ export async function deletTimeSlotHandle(req, res, next) {
       `Error Deleting time slot ${timeSlotId} for user ${providerId} : `,
       error
     );
-    return res
-      .status(error.status || 500)
-      .json({
-        message: error.message || "Server error while delete the time slot",
-        code: "SERVER_ERROR",
-      });
+    return res.status(error.status || 500).json({
+      message: error.message || "Server error while delete the time slot",
+      code: "SERVER_ERROR",
+    });
+  }
+}
+
+export async function updateTimeSlot(req, res, next) {
+  const providerId = req.user.id;
+  const timeSlotId = req.params.id;
+  const { startTime, duration } = req.body;
+  try {
+    const jsStartTime = convertDateToJs(startTime);
+    const conflictCheck = `SELECT id FROM time_slots WHERE provider_id = $1
+    AND tstzrange(
+      start_time,
+      start_time + ($2 * interval '1 minute'),
+      '[]'
+    ) && tstzrange(
+      $3::timestamptz,
+      $3::timestamptz + ($2 * interval '1 minute'),
+      '[]')`;
+    const conflictResult = await query(conflictCheck, [
+      providerId,
+      duration,
+      jsStartTime,
+    ]);
+
+    if (conflictResult.rowCount > 0) {
+      logger.warn(
+        `A time slot already exists for this period for provider:${providerId}`
+      );
+      return res
+        .status(409)
+        .json({ message: "A time slot already exists for this period" });
+    }
+
+    const updateTimeSlotQuery = `UPDATE time_slots SET start_time=$1,duration_minutes=$2
+                                 WHERE id = $3 AND provider_id=$4
+                                 RETURNING *`;
+    const updtaResult = await query(updateTimeSlotQuery, [
+      jsStartTime,
+      duration,
+      timeSlotId,
+      providerId,
+    ]);
+    if (updtaResult.rows.length === 0) {
+      logger.warn(`Update failed: time slot not found or access denied for task ID ${timeSlotId}, user ID ${providerId}`)
+      const checkTimeSlotExistenceQuery = 'SELECT id FROM time_slots WHERE id = $1'
+      const checkResult = await query(checkTimeSlotExistenceQuery, [timeSlotId])
+      if (checkResult.rows.length === 0) {
+        return res.status(404).json({ message: "time slot does not exist" })
+      }
+    }
+    logger.info(`time slot ${timeSlotId} updated Successfully by user ${providerId}`)
+    return res.json(updtaResult.rows[0])
+  } catch (error) {
+    logger.error(`Error Updating time slot ${timeSlotId} for user ${providerId} : `, error)
+    return res.status(error.status || 500).json({ message: error.message || "Server error while update the task" })
   }
 }
