@@ -136,26 +136,26 @@ const initialzeDbSchema = async () => {
     logger.debug("update_updated_at_column function ensured.");
 
     //-- tigger for service_providers
-    await client.query(`CREATE TRIGGER trg_service_providers_updated_at
-                       BEFORE UPDATE ON service_providers
-                       FOR EACH ROW
-                       EXECUTE FUNCTION update_modified_at();`);
-  logger.debug("service_providers update_at Trigger is checked and created")
+  //   await client.query(`CREATE TRIGGER trg_service_providers_updated_at
+  //                      BEFORE UPDATE ON service_providers
+  //                      FOR EACH ROW
+  //                      EXECUTE FUNCTION update_modified_at();`);
+  // logger.debug("service_providers update_at Trigger is checked and created")
     //-- tigger for clients
-    await client.query(`CREATE TRIGGER trg_clients_updated_at
-                        BEFORE UPDATE ON clients
-                        FOR EACH ROW
-                        EXECUTE FUNCTION update_modified_at();`);
+    // await client.query(`CREATE TRIGGER trg_clients_updated_at
+    //                     BEFORE UPDATE ON clients
+    //                     FOR EACH ROW
+    //                     EXECUTE FUNCTION update_modified_at();`);
     //--tigger for time_slots
-    await client.query(`CREATE TRIGGER trg_time_slots_updated_at
-                        BEFORE UPDATE ON time_slots
-                        FOR EACH ROW
-                        EXECUTE FUNCTION update_modified_at();`);
+    // await client.query(`CREATE TRIGGER trg_time_slots_updated_at
+    //                     BEFORE UPDATE ON time_slots
+    //                     FOR EACH ROW
+    //                     EXECUTE FUNCTION update_modified_at();`);
     //-- tigeger for appointment
-    await client.query(`CREATE TRIGGER trg_appointment_updated_at
-                        BEFORE UPDATE ON appointment
-                        FOR EACH ROW
-                        EXECUTE FUNCTION update_modified_at();`);
+    // await client.query(`CREATE TRIGGER trg_appointment_updated_at
+    //                     BEFORE UPDATE ON appointment
+    //                     FOR EACH ROW
+    //                     EXECUTE FUNCTION update_modified_at();`);
     
   } catch (error) {
     logger.error(`Error while initializing the schema`, error);
