@@ -12,6 +12,7 @@ import  indexRouter from'./routes/index.js';
 import usersRouter from'./routes/users.js';
 import authServiceProviderRouter from './routes/auth-service-provider.js'
 import autClientRouter from './routes/auth-client.js'
+import timeSlotsRouter from './routes/time-slots.js'
 
 const app = express();
 const __filname  = fileURLToPath(import.meta.url)
@@ -28,6 +29,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/auth-service-provider', authServiceProviderRouter)
 app.use('/auth-client',autClientRouter)
+app.use('/time-slots',timeSlotsRouter)
 
 
 app.use('/', indexRouter);
