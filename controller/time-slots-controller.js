@@ -52,6 +52,7 @@ export async function createTimeSlotHandle(req, res, next) {
     );
     return res.status(error.status || 500).json({
       message: error.message || "Server error while creating the time slot",
+      code: "SERVER_ERROR",
     });
   }
 }
@@ -62,12 +63,73 @@ export async function getAllTimeSlotHandle(req, res, next) {
     const getAllTimeSlotQUery = `SELECT start_time,duration_minutes,is_reserved  FROM time_slots 
                                  WHERE provider_id = $1
                                  ORDER BY start_time `;
-    const getAllTimeSlotResult = await query(getAllTimeSlotQUery,[providerId])
-    const result = getAllTimeSlotResult.rows
-    logger.info(`get all time slot create by service provider with id: ${providerId}`)
-    res.status(200).json(result)
+    const getAllTimeSlotResult = await query(getAllTimeSlotQUery, [providerId]);
+    const result = getAllTimeSlotResult.rows;
+    logger.info(
+      `get all time slot create by service provider with id: ${providerId}`
+    );
+    res.status(200).json(result);
   } catch (error) {
-    logger.error(`Error get all  time slot for provider: ${providerId}  `)
-    return res.status(error.status||500).json({message:error.message||"Server error while get all time slot"})
+    logger.error(`Error get all  time slot for provider: ${providerId}  `);
+    return res
+      .status(error.status || 500)
+      .json({
+        message: error.message || "Server error while get all time slot",
+        code: "SERVER_ERROR",
+      });
+  }
+}
+
+export async function deletTimeSlotHandle(req, res, next) {
+  const providerId = req.user.id;
+  const timeSlotId = req.params.id;
+  try {
+    const getTimeSlotQuery = `SELECT is_reserved FROM time_slots
+                              WHERE id = $1 AND provider_id = $2;`;
+    const getTimeSlotResult = await query(getTimeSlotQuery, [
+      timeSlotId,
+      providerId,
+    ]);
+
+    if (getTimeSlotResult.rows.length === 0) {
+      return res.status(404).json({ message: "time slot does not exist" });
+    }
+
+    const isTimeSlotReserved = getTimeSlotResult.rows[0].is_reserved;
+    logger.debug(`get colun is_reserved from time_slots id ${timeSlotId}`);
+    if (isTimeSlotReserved) {
+      logger.warn(
+        `you cannot delete a time slot that has already been booked time slot id ${timeSlotId}`
+      );
+      return res
+        .status(409)
+        .json({
+          message: "you cannot delete a time slot that has already been booked",
+          code: "TIMESLOT_BOOKED",
+        });
+    }
+
+    const deleteTimeSlotQuery = `DELETE FROM time_slots
+                                 WHERE id = $1 AND provider_id= $2
+                                 RETURNING id`;
+    const deleteResult = await query(deleteTimeSlotQuery, [
+      timeSlotId,
+      providerId,
+    ]);
+    logger.info(
+      `time slot ${timeSlotId} deleted Successfully by user ${providerId}`
+    );
+    return res.status(200).json({ message: "time slot deleted Successfully" });
+  } catch (error) {
+    logger.error(
+      `Error Deleting time slot ${timeSlotId} for user ${providerId} : `,
+      error
+    );
+    return res
+      .status(error.status || 500)
+      .json({
+        message: error.message || "Server error while delete the time slot",
+        code: "SERVER_ERROR",
+      });
   }
 }

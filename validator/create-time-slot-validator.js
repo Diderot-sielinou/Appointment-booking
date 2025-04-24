@@ -30,11 +30,14 @@ export function createTimeSlotValidator (req,res,next){
   next()
 }
 
-/**
- * INSERT INTO time_slots (provider_id, start_time, duration_minutes)
-VALUES (
-  'ebc0ff91-3c64-4202-9ff0-1171baf4aabc',
-  TO_TIMESTAMP('02/05/2025 14:00', 'DD/MM/YYYY HH24:MI'),
-  30
-);
- */
+const IdSchema = Joi.object({
+  id: Joi.string().required(),
+})
+
+export const readIdValidator = (req, res, next) => {
+  const { error } = IdSchema.validate(req.params)
+  if (error) {
+    return res.status(400).json({ message: error.details[0].message });
+  }
+  next();
+}
