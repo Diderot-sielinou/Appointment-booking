@@ -1,5 +1,8 @@
 import { query } from "../config/db.js";
-import { convertDateToJs, convetSearcheDateToJs } from "../utils/convert-date.js";
+import {
+  convertDateToJs,
+  convetSearcheDateToJs,
+} from "../utils/convert-date.js";
 import logger from "../utils/logger.js";
 import { searchTimeSlotValidator } from "../validator/create-time-slot-validator.js";
 
@@ -169,38 +172,141 @@ export async function updateTimeSlot(req, res, next) {
       providerId,
     ]);
     if (updtaResult.rows.length === 0) {
-      logger.warn(`Update failed: time slot not found or access denied for task ID ${timeSlotId}, user ID ${providerId}`)
-      const checkTimeSlotExistenceQuery = 'SELECT id FROM time_slots WHERE id = $1'
-      const checkResult = await query(checkTimeSlotExistenceQuery, [timeSlotId])
+      logger.warn(
+        `Update failed: time slot not found or access denied for task ID ${timeSlotId}, user ID ${providerId}`
+      );
+      const checkTimeSlotExistenceQuery =
+        "SELECT id FROM time_slots WHERE id = $1";
+      const checkResult = await query(checkTimeSlotExistenceQuery, [
+        timeSlotId,
+      ]);
       if (checkResult.rows.length === 0) {
-        return res.status(404).json({ message: "time slot does not exist" })
+        return res.status(404).json({ message: "time slot does not exist" });
       }
     }
-    logger.info(`time slot ${timeSlotId} updated Successfully by user ${providerId}`)
-    return res.json(updtaResult.rows[0])
+    logger.info(
+      `time slot ${timeSlotId} updated Successfully by user ${providerId}`
+    );
+    return res.json(updtaResult.rows[0]);
   } catch (error) {
-    logger.error(`Error Updating time slot ${timeSlotId} for user ${providerId} : `, error)
-    return res.status(error.status || 500).json({ message: error.message || "Server error while update the task" })
+    logger.error(
+      `Error Updating time slot ${timeSlotId} for user ${providerId} : `,
+      error
+    );
+    return res
+      .status(error.status || 500)
+      .json({ message: error.message || "Server error while update the task" });
   }
 }
 
-export async function searchTimeSlotHandle(req,res,next) {
-  let  {providerId,fromDate,toDate}= req.query
-  
+export async function searchTimeSlotHandle(req, res, next) {
+  let { providerId, fromDate, toDate } = req.query;
+
   try {
-    searchTimeSlotValidator(req.query)
-    if(!toDate){
-      toDate = fromDate
+    searchTimeSlotValidator(req.query);
+    if (!toDate) {
+      toDate = fromDate;
     }
-    const [fromDateToIso,toDateToIso]= convetSearcheDateToJs(fromDate,toDate)
-    const searchQuery =`SELECT * FROM time_slots 
+    const [fromDateToIso, toDateToIso] = convetSearcheDateToJs(
+      fromDate,
+      toDate
+    );
+    const searchQuery = `SELECT * FROM time_slots 
                         WHERE provider_id = $1 AND start_time BETWEEN $2 AND $3
-                        ORDER BY start_time ASC `
-    const result = await query(searchQuery,[providerId,fromDateToIso,toDateToIso])
-    logger.info(`search time slot for provider ${providerId} at ${fromDate}and ${toDate}`)
-    res.status(200).json(result.rows)
+                        ORDER BY start_time ASC `;
+    const result = await query(searchQuery, [
+      providerId,
+      fromDateToIso,
+      toDateToIso,
+    ]);
+    logger.info(
+      `search time slot for provider ${providerId} at ${fromDate}and ${toDate}`
+    );
+    res.status(200).json(result.rows);
   } catch (error) {
-    logger.error(`error while searching for time slots  for user ${providerId} : `, error)
-    return res.status(error.status || 500).json({ message: error.message || "Server error  while searching for time slots" })
+    logger.error(
+      `error while searching for time slots  for user ${providerId} : `,
+      error
+    );
+    return res
+      .status(error.status || 500)
+      .json({
+        message:
+          error.message || "Server error  while searching for time slots",
+      });
+  }
+}
+
+export async function bookedTimeSlotHandle(req, res, next) {
+  const clientId = req.user.id;
+  const timeSlotId = req.params.id;
+  try {
+    const checkTimeSlotQuery = `SELECT * FROM time_slots 
+                               WHERE id=$1`;
+    const checkResult = await query(checkTimeSlotQuery, [timeSlotId]);
+    logger.info(`check if exist time slot ${timeSlotId} on database`);
+    if (checkResult.rows.length === 0) {
+      logger.warn(`no time slot found for id ${timeSlotId}`);
+     return res.status(404).json({ message: "no time slot found" });
+    }
+
+    const providerId = checkResult.rows[0].provider_id;
+
+    const timeSlotStatus = checkResult.rows[0].is_reserved;
+
+    if (timeSlotStatus) {
+      logger.warn(
+        `time slot ${timeSlotId} already booked you can booking again`
+      );
+      return res
+        .status(409)
+        .json({ message: "time slot is already booked you can't book again" });
+    }
+    const createAppointmentQuery = `INSERT INTO appointment (client_id,provider_id,time_slot_id,status)
+                       VALUES ($1,$2,$3,$4)
+                       RETURNING *`;
+    const createAppointmentResult = await query(createAppointmentQuery, [
+      clientId,
+      providerId,
+      timeSlotId,
+      "confirmed",
+    ]);
+    logger.info(
+      `successfully register appointment for client ${clientId} with provider ${providerId}`
+    );
+    const updateTimeSlotQuery = `UPDATE time_slots SET is_reserved = $1
+                               WHERE id=$2 AND provider_id = $3
+                               RETURNING *`;
+    const updateResult = await query(updateTimeSlotQuery, [
+      true,
+      timeSlotId,
+      providerId,
+    ]);
+
+    if (updateResult.rows.length === 0) {
+      logger.error(
+        `error while updating the reservation status of the time slot ${timeSlotId} created by ${providerId}`
+      );
+    }
+    logger.info(
+      `successfully register appointment for client ${clientId} and updating the reservation status of the time slot ${timeSlotId} `
+    );
+    return res
+      .status(200)
+      .json({
+        message:
+          "the reservation of the time slot is successfully carried out you have a new appointment",
+        appointment: createAppointmentResult.rows[0],
+      });
+  } catch (error) {
+    logger.error(
+      `error while booked the time slots  for user ${clientId} : `,
+      error
+    );
+    return res
+      .status(error.status || 500)
+      .json({
+        message: error.message || "Server error  while booking the time slots",
+      });
   }
 }

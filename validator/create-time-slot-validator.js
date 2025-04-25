@@ -27,7 +27,7 @@ export function createTimeSlotValidator(req, res, next) {
 }
 
 const IdSchema = Joi.object({
-  id: Joi.string().required(),
+  id: Joi.string().uuid().required(),
 });
 
 export const readIdValidator = (req, res, next) => {
