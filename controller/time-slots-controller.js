@@ -212,12 +212,13 @@ export async function searchTimeSlotHandle(req, res, next) {
       toDate
     );
     const searchQuery = `SELECT * FROM time_slots 
-                        WHERE provider_id = $1 AND start_time BETWEEN $2 AND $3
+                        WHERE provider_id = $1 AND start_time BETWEEN $2 AND $3 AND is_reserved = $4
                         ORDER BY start_time ASC `;
     const result = await query(searchQuery, [
       providerId,
       fromDateToIso,
       toDateToIso,
+      false
     ]);
     logger.info(
       `search time slot for provider ${providerId} at ${fromDate}and ${toDate}`
