@@ -1,6 +1,7 @@
 import { query } from "../config/db.js";
-import { convertDateToJs } from "../utils/convert-date.js";
+import { convertDateToJs, convetSearcheDateToJs } from "../utils/convert-date.js";
 import logger from "../utils/logger.js";
+import { searchTimeSlotValidator } from "../validator/create-time-slot-validator.js";
 
 export async function createTimeSlotHandle(req, res, next) {
   const providerId = req.user.id;
@@ -158,7 +159,7 @@ export async function updateTimeSlot(req, res, next) {
         .json({ message: "A time slot already exists for this period" });
     }
 
-    const updateTimeSlotQuery = `UPDATE time_slots SET start_time=$1,duration_minutes=$2
+    const updateTimeSlotQuery = `UPDATE time_slots SET start_time=$1::timestamptz,duration_minutes=$2
                                  WHERE id = $3 AND provider_id=$4
                                  RETURNING *`;
     const updtaResult = await query(updateTimeSlotQuery, [
@@ -180,5 +181,26 @@ export async function updateTimeSlot(req, res, next) {
   } catch (error) {
     logger.error(`Error Updating time slot ${timeSlotId} for user ${providerId} : `, error)
     return res.status(error.status || 500).json({ message: error.message || "Server error while update the task" })
+  }
+}
+
+export async function searchTimeSlotHandle(req,res,next) {
+  let  {providerId,fromDate,toDate}= req.query
+  
+  try {
+    searchTimeSlotValidator(req.query)
+    if(!toDate){
+      toDate = fromDate
+    }
+    const [fromDateToIso,toDateToIso]= convetSearcheDateToJs(fromDate,toDate)
+    const searchQuery =`SELECT * FROM time_slots 
+                        WHERE provider_id = $1 AND start_time BETWEEN $2 AND $3
+                        ORDER BY start_time ASC `
+    const result = await query(searchQuery,[providerId,fromDateToIso,toDateToIso])
+    logger.info(`search time slot for provider ${providerId} at ${fromDate}and ${toDate}`)
+    res.status(200).json(result.rows)
+  } catch (error) {
+    logger.error(`error while searching for time slots  for user ${providerId} : `, error)
+    return res.status(error.status || 500).json({ message: error.message || "Server error  while searching for time slots" })
   }
 }
