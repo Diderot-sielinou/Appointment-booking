@@ -218,7 +218,7 @@ export async function searchTimeSlotHandle(req, res, next) {
       providerId,
       fromDateToIso,
       toDateToIso,
-      false
+      false,
     ]);
     logger.info(
       `search time slot for provider ${providerId} at ${fromDate}and ${toDate}`
@@ -229,18 +229,16 @@ export async function searchTimeSlotHandle(req, res, next) {
       `error while searching for time slots  for user ${providerId} : `,
       error
     );
-    return res
-      .status(error.status || 500)
-      .json({
-        message:
-          error.message || "Server error  while searching for time slots",
-      });
+    return res.status(error.status || 500).json({
+      message: error.message || "Server error  while searching for time slots",
+    });
   }
 }
 
 export async function bookedTimeSlotHandle(req, res, next) {
   const clientId = req.user.id;
   const timeSlotId = req.params.id;
+  const io = req.app.get("io");
   try {
     const checkTimeSlotQuery = `SELECT * FROM time_slots 
                                WHERE id=$1`;
@@ -248,7 +246,7 @@ export async function bookedTimeSlotHandle(req, res, next) {
     logger.info(`check if exist time slot ${timeSlotId} on database`);
     if (checkResult.rows.length === 0) {
       logger.warn(`no time slot found for id ${timeSlotId}`);
-     return res.status(404).json({ message: "no time slot found" });
+      return res.status(404).json({ message: "no time slot found" });
     }
 
     const providerId = checkResult.rows[0].provider_id;
@@ -292,22 +290,24 @@ export async function bookedTimeSlotHandle(req, res, next) {
     logger.info(
       `successfully register appointment for client ${clientId} and updating the reservation status of the time slot ${timeSlotId} `
     );
-    return res
-      .status(200)
-      .json({
-        message:
-          "the reservation of the time slot is successfully carried out you have a new appointment",
-        appointment: createAppointmentResult.rows[0],
-      });
+    //  Notification  provider
+    io.to(providerId).emit("time_slot_reserved", {
+      message: "A slot has just been reserved",
+      slotInfo: checkResult.rows,
+    });
+
+    return res.status(200).json({
+      message:
+        "the reservation of the time slot is successfully carried out you have a new appointment",
+      appointment: createAppointmentResult.rows[0],
+    });
   } catch (error) {
     logger.error(
       `error while booked the time slots  for user ${clientId} : `,
       error
     );
-    return res
-      .status(error.status || 500)
-      .json({
-        message: error.message || "Server error  while booking the time slots",
-      });
+    return res.status(error.status || 500).json({
+      message: error.message || "Server error  while booking the time slots",
+    });
   }
 }

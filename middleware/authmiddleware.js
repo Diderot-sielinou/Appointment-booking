@@ -24,6 +24,8 @@ const authMiddleware = (req, res, next) => {
       return res.status(401).json({ message: "Token is not valid" })
     }
     return res.status(error.status || 500).json({ message: error.message || "server error during token verification" })
+  }finally{
+    
   }
 
 }

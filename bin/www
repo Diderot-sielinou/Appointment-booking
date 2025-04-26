@@ -6,11 +6,17 @@
 
 import app from'../app.js';
 import { connectToDb, initialzeDbSchema } from '../config/db.js';
+import logger from '../utils/logger.js';
 
 import deb from'debug'
 import http from 'http';
-import logger from '../utils/logger.js';
+import {Server} from 'socket.io'
+import cors from 'cors'
+import jwt from 'jsonwebtoken'
+import { setupSocket } from '../utils/socket-config.js';
+
 const debug = deb('appointment-booking:server');
+
 
 /**
  * Get port from environment and store in Express.
@@ -19,11 +25,40 @@ const debug = deb('appointment-booking:server');
 let port = normalizePort(process.env.PORT || '3000');
 app.set('port', port);
 
+
 /**
  * Create HTTP server.
- */
+*/
 
 const server = http.createServer(app);
+// Create Socket.IO
+const io = new Server(server, {
+  cors: {
+    origin: '*'
+  }
+});
+app.set('io',io)
+
+// Middleware d'authentification pour sockets
+io.use((socket, next) => {
+  const token = socket.handshake.auth.token;
+  if (!token) {
+    return next(new Error('Authentication error'));
+  }
+  
+  try {
+    const payload = jwt.verify(token, process.env.JWT_SECRET); 
+    socket.user = payload;
+    next();
+  } catch (err) {
+    next(new Error('Authentication error'));
+    socket.disconnect()
+  }
+});
+
+setupSocket(io)
+
+
 
 /**
  * Listen on provided port, on all network interfaces.
