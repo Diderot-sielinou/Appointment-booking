@@ -37,7 +37,7 @@ export async function loginClientHandle(req,res,next) {
           throw new Error('Error generating authentication toke')
         }
         logger.info(`client logged in successfully: ${email} (ID: ${client.id})`)
-        res.json({
+        res.status(200).json({
           message: "Login Successfull!",
           token: token,
           user: {
@@ -46,8 +46,8 @@ export async function loginClientHandle(req,res,next) {
             lastName: client.last_name,
             email: client.email,
             adresse:client.adresse,
-            phone:client.phone
-
+            phone:client.phone,
+            createdAt:client.created_at
           }
         })
       })

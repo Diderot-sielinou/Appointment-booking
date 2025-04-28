@@ -7,21 +7,25 @@ import createError from 'http-errors'
 import cors from 'cors'
 
 
+import swaggerUi from "swagger-ui-express"
+import swaggerSpec from './swaggerConfig.js';
 import winstonLogger from "./utils/logger.js"
 
-import  indexRouter from'./routes/index.js';
-import usersRouter from'./routes/users.js';
+
+
+// import  indexRouter from'./routes/index.j';
+
 import authServiceProviderRouter from './routes/auth-service-provider.js'
-import autClientRouter from './routes/auth-client.js'
+import authClientRouter from './routes/auth-client.js'
 import timeSlotsRouter from './routes/time-slots.js'
 import appointmentRouter from './routes/appointment.js'
 
 const app = express();
-const __filname  = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filname)
+const __filename  = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
 
 
-const morganFormat = process.env.NODE_ENV === "production" ? "dev" : 'combined'
+const morganFormat = process.env.NODE_ENV === "production" ? "combined" : 'dev'
 app.use(logger(morganFormat, { stream: winstonLogger.stream }));
 
 app.use(express.json());
@@ -31,15 +35,14 @@ app.use(cors());
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/auth-service-provider', authServiceProviderRouter)
-app.use('/auth-client',autClientRouter)
+app.use('/auth-client',authClientRouter)
 app.use('/time-slots',timeSlotsRouter)
 app.use('/appointment',appointmentRouter);
 
-
-app.use('/', indexRouter);
-app.use('/users', usersRouter);
+// app.use('/', indexRouter);
 
 
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {

@@ -35,7 +35,7 @@ export async function registerClientHandle(req, res, next) {
 
     return res.status(201).json({
       message: "client registered successfully",
-      userId: {
+      clientId: {
         id: newClient.id,
       },
     });
