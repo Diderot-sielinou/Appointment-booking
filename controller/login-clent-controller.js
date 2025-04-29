@@ -8,7 +8,7 @@ export async function loginClientHandle(req,res,next) {
   try {
     const findClientQuery= `SELECT id,first_name,last_name,email,password,adresse,phone FROM clients WHERE email=$1`
     const clientResult = await query(findClientQuery,[email])
-    if(clientResult.rowCount === 0){
+    if(clientResult.rows.length === 0){
       logger.warn(`Login attempt failed: User not found - ${email}`)
       return res.status(401).json({ message: 'Invalid Credentials' })
 
@@ -40,7 +40,7 @@ export async function loginClientHandle(req,res,next) {
         res.status(200).json({
           message: "Login Successfull!",
           token: token,
-          user: {
+          client: {
             id: client.id,
             firstName: client.first_name,
             lastName: client.last_name,

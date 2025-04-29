@@ -6,7 +6,7 @@ export function convertDateToJs(stringDate) {
     zone: "Africa/Lagos",
   });
   if (!parsedDate.isValid) {
-    throw new Error("Format de date invalide. Utilisez DD/MM/YYYY HH:MM");
+    throw new Error("Format de date invalide. Utilisez dd/MM/YYYY HH:MM");
   }
   const jsDate = parsedDate.toJSDate();
   return jsDate;

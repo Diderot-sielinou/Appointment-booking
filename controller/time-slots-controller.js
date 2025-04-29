@@ -64,7 +64,7 @@ export async function createTimeSlotHandle(req, res, next) {
 export async function getAllTimeSlotHandle(req, res, next) {
   const providerId = req.user.id;
   try {
-    const getAllTimeSlotQUery = `SELECT start_time,duration_minutes,is_reserved  FROM time_slots 
+    const getAllTimeSlotQUery = `SELECT * FROM time_slots 
                                  WHERE provider_id = $1
                                  ORDER BY start_time `;
     const getAllTimeSlotResult = await query(getAllTimeSlotQUery, [providerId]);
@@ -187,7 +187,8 @@ export async function updateTimeSlot(req, res, next) {
     logger.info(
       `time slot ${timeSlotId} updated Successfully by user ${providerId}`
     );
-    return res.status(200).json(updtaResult.rows[0]);
+    const results = updtaResult.rows[0]
+    return res.status(200).json(results);
   } catch (error) {
     logger.error(
       `Error Updating time slot ${timeSlotId} for user ${providerId} : `,

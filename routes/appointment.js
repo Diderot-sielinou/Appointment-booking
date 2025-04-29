@@ -68,7 +68,6 @@ router.get("/client", authmiddleware, getAllAppointmentClientHandle);
  *               $ref: '#/components/schemas/Error'
  */
 
-
 router.get("/provider", authmiddleware, getAllAppointmentProviderHandle);
 
 /**

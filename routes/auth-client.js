@@ -76,9 +76,6 @@ const router = express.Router()
 
 router.post('/register', registerClientValidate, registerClientHandle);
 
-
-router.post('/register',registerClientValidate,registerClientHandle)
-
 /**
  * @swagger
  * /auth-client/login:

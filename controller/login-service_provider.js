@@ -10,7 +10,7 @@ export async function loginServiceProviderHandle(req, res, next) {
                                     work,about_myself,phone FROM service_providers
                                     WHERE email=$1`;
     const ServiceProviderResult = await query(findServiceProviderQuery, [email]);
-    if (ServiceProviderResult.rowCount === 0) {
+    if (ServiceProviderResult.rows.length === 0) {
       logger.warn(`Login attempt failed: User not found - ${email}`);
       return res.status(401).json({ message: "Invalid Credentials" });
     }
@@ -43,7 +43,7 @@ export async function loginServiceProviderHandle(req, res, next) {
         logger.info(
           `ServiceProvider logged in successfully: ${email} (ID: ${ServiceProvider.id})`
         );
-        res.json({
+        res(200).json({
           message: "Login Successfull!",
           token: token,
           user: {

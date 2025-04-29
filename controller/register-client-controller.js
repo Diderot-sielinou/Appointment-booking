@@ -9,7 +9,7 @@ export async function registerClientHandle(req, res, next) {
   try {
     const checkClientQuery = `SELECT email FROM clients WHERE email = $1`;
     const checkClientResult = await query(checkClientQuery, [email]);
-    if (checkClientResult.rows > 0) {
+    if (checkClientResult.rows.length >  0) {
       logger.warn(
         `Registrationg attempt failed: Email already exists - ${email}`
       );
