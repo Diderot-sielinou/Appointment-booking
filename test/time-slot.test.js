@@ -176,7 +176,7 @@ describe("tme slot api (/time-slots)", () => {
     });
   });
 
-  describe('PUT /time-slots/:id', () => {
+  describe('PUT /:id', () => {
     beforeEach(async () => {
       // Create a time first to ensure there's something to get
       const timeSlotData = {
