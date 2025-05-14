@@ -2,9 +2,9 @@ import { query } from "../config/db.js";
 import {
   convertDateToJs,
   convetSearcheDateToJs,
-} from "../utils/convert-date.js";
+} from "../utils/convertDate.js";
 import logger from "../utils/logger.js";
-import { searchTimeSlotValidator } from "../validator/create-time-slot-validator.js";
+import { searchTimeSlotValidator } from "../validator/createTimeSlotValidator.js";
 
 export async function createTimeSlotHandle(req, res, next) {
   const providerId = req.user.id;

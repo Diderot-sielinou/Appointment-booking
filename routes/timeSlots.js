@@ -12,7 +12,7 @@ import {
 import {
   createTimeSlotValidator,
   readIdValidator,
-} from "../validator/create-time-slot-validator.js";
+} from "../validator/createTimeSlotValidator.js";
 
 /**
  * @swagger

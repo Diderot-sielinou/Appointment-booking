@@ -5,8 +5,8 @@ import {
   CancelAppointmentByProviderHandle,
   getAllAppointmentClientHandle,
   getAllAppointmentProviderHandle,
-} from "../controller/appointment-controller.js";
-import { readIdValidator } from "../validator/create-time-slot-validator.js";
+} from "../controller/appointmentController.js";
+import { readIdValidator } from "../validator/createTimeSlotValidator.js";
 const router = express.Router();
 
 /**
