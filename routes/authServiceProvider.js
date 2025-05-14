@@ -1,6 +1,6 @@
 import express from 'express'
-import registerServiceProviderHandle from '../controller/register-serviceProvider-controller.js';
-import { loginServiceProviderHandle } from '../controller/login-service_provider.js';
+import registerServiceProviderHandle, {loginServiceProviderHandle} from '../controller/authProviderController.js';
+import { loginProviderValidator, registerProviderValidate } from '../validator/authProviderValidator.js';
 
 const router = express.Router(); 
 
@@ -84,7 +84,7 @@ const router = express.Router();
  *     security: [] # Override global security - this endpoint is public
  */
 
-router.post('/register', registerServiceProviderHandle)
+router.post('/register',registerProviderValidate, registerServiceProviderHandle)
 
 /**
  * @swagger
@@ -140,6 +140,6 @@ router.post('/register', registerServiceProviderHandle)
  *     security: [] # Override global security - this endpoint is public
  */
 
-router.post('/login', loginServiceProviderHandle)
+router.post('/login',loginProviderValidator, loginServiceProviderHandle)
 
 export default router

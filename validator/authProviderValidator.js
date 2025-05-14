@@ -1,10 +1,21 @@
-import Joi from "joi";
+import  Joi  from 'joi';
 import AppError from "../utils/AppError.js";
 
-const clientRegisterValidator = Joi.object({
-  firstName: Joi.string().min(3).max(30).required(),
-  lastName: Joi.string().min(3).max(30).required(),
-  email: Joi.string().email({ minDomainSegments: 2 }).required(),
+const providerRegisterValidator = Joi.object({
+  fullName: Joi.string()
+    .min(3)
+    .max(50)
+    .pattern(/^[A-Za-zÀ-ÿ ,.'-]+$/)
+    .required()
+    .messages({
+      "string.pattern.base":
+        "The full name must only contain letters and certain special characters.",
+    }),
+
+  email: Joi.string().email({ minDomainSegments: 2 }).required().messages({
+    "string.email": "The email address is invalid.",
+  }),
+
   password: Joi.string()
     .pattern(
       new RegExp(
@@ -18,18 +29,25 @@ const clientRegisterValidator = Joi.object({
   repeat_password: Joi.valid(Joi.ref("password")).required().messages({
     "any.only": "Passwords do not match",
   }),
-  adresse: Joi.string().min(3).max(100).optional(),
+
   phone: Joi.string()
-    .pattern(/^\+?[0-9]{9,15}$/)
+    .pattern(/^\+[0-9]{9,15}$/)
     .optional()
     .messages({
       "string.pattern.base":
-        "Le numéro de téléphone est invalide (ex: +237XXXXXXXXX).",
+        "The phone number is invalid (ex: +237XXXXXXXXX).",
     }),
+
+  adresse: Joi.string().min(3).max(100).optional(),
+
+  work: Joi.string().min(3).max(100).optional(),
+
+  aboutMyself: Joi.string().min(20).max(1000).optional(),
 });
 
-export const registerClientValidate = (req, res, next) => {
-  const { error } = clientRegisterValidator.validate(req.body, {
+
+export const registerProviderValidate = (req, res, next) => {
+  const { error } = providerRegisterValidator.validate(req.body, {
     abortEarly: false,
   });
 
@@ -45,7 +63,7 @@ const loginSchema = Joi.object({
   password: Joi.string().required(),
 });
 
-export const loginClientValidator = (req, res, next) => {
+export const loginProviderValidator = (req, res, next) => {
   const { error } = loginSchema.validate(req.body, { abortEarly: false });
   if (error) {
     const messages = error.details.map((detail) => detail.message);
@@ -53,3 +71,4 @@ export const loginClientValidator = (req, res, next) => {
   }
   next();
 };
+
