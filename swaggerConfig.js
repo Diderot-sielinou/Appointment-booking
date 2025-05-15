@@ -16,7 +16,7 @@ const swaggerOptions = {
     },
     servers: [
       {
-        url: `http://localhost:${process.env.PORT || 3000}/api-docs`,
+        url: `http://localhost:${process.env.PORT || 3000}`,
 
         description: 'Development server',
       },
@@ -40,8 +40,8 @@ const swaggerOptions = {
             email:{type:'string',format:'email' ,description:'client email address'},
             address:{type:'string',description:" addresse client"},
             phone:{type:'string',description:" customer number"},
-            password:{type:'string',format:'uuid',description:'password client'},
-            profileImageUrl: { type: 'string', format: 'url', nullable: true, description: 'URL of the user\'s profile image' },
+            // password:{type:'string',format:'uuid',description:'password client'},
+            // profileImageUrl: { type: 'string', format: 'url', nullable: true, description: 'URL of the user\'s profile image' },
             createdAt: { type: 'string', format: 'date-time', description: 'Timestamp of user creation' },
           },
           required: ['id', 'firstName', 'lastName', 'email','password', 'createdAt']
@@ -56,9 +56,9 @@ const swaggerOptions = {
             work:{type:'string',description:" service provider profession"},
             aboutMe:{type:'string',description:" personality description"},
             phone:{type:'string',description:" customer number"},
-            password:{type:'string',format:'uuid',description:'password provider'},
-            profileImageUrl: { type: 'string', format: 'url', nullable: true, description: 'URL of the user\'s profile image' },
-            createdAt: { type: 'string', format: 'date-time', description: 'Timestamp of provider creation' },
+            // password:{type:'string',format:'uuid',description:'password provider'},
+            // profileImageUrl: { type: 'string', format: 'url', nullable: true, description: 'URL of the user\'s profile image' },
+            // createdAt: { type: 'string', format: 'date-time', description: 'Timestamp of provider creation' },
           },
           required: ['id', 'fullName',  'email','password', 'createdAt']
         },

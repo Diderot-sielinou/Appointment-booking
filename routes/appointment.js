@@ -13,7 +13,7 @@ const router = express.Router();
 /**
  * @swagger
  * tags:
- *   name: operation on appointments
+ *   name: Appointments
  *   description: view and cancel appointments by the client or provider
  */
 
@@ -31,9 +31,21 @@ const router = express.Router();
  *         content:
  *           application/json:
  *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/appointment'
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Appointments retrieved successfully.
+ *                 results:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/appointment'
+ *       401:
+ *         description: Unauthorized – token missing or invalid.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  *       500:
  *         description: Server error.
  *         content:
@@ -41,6 +53,7 @@ const router = express.Router();
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
+
 
 router.get(
   "/client",
@@ -53,7 +66,7 @@ router.get(
  * @swagger
  * /appointment/provider:
  *   get:
- *     summary: View my appointments (Provider)
+ *     summary: View my appointments (provider)
  *     tags: [Appointments]
  *     security:
  *       - bearerAuth: []
@@ -63,9 +76,21 @@ router.get(
  *         content:
  *           application/json:
  *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/appointment'
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Appointments retrieved successfully.
+ *                 results:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/appointment'
+ *       401:
+ *         description: Unauthorized – token missing or invalid.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  *       500:
  *         description: Server error.
  *         content:
@@ -73,6 +98,7 @@ router.get(
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
+
 
 router.get(
   "/provider",
@@ -85,7 +111,7 @@ router.get(
  * @swagger
  * /appointment/{id}/canceled-by-provider:
  *   patch:
- *     summary: "Cancel an appointment by the provider and send a notification"
+ *     summary: Cancel an appointment by the provider and notify the client
  *     tags:
  *       - Appointments
  *     security:
@@ -97,10 +123,10 @@ router.get(
  *         schema:
  *           type: string
  *           format: uuid
- *         description: "ID of the appointment"
+ *         description: The ID of the appointment to cancel
  *     responses:
- *       "200":
- *         description: "Appointment successfully cancelled"
+ *       200:
+ *         description: Appointment successfully cancelled
  *         content:
  *           application/json:
  *             schema:
@@ -108,34 +134,41 @@ router.get(
  *               properties:
  *                 message:
  *                   type: string
- *                   example: "Appointment successfully cancelled"
+ *                   example: Appointment successfully cancelled
  *                 appointment:
  *                   $ref: '#/components/schemas/appointment'
- *       "400":
- *         description: "Invalid ID format."
+ *       400:
+ *         description: Invalid appointment ID format
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Error'
- *       "409":
- *         description: "Update failed: access denied for appointment."
+ *       401:
+ *         description: Unauthorized
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Error'
- *       "401":
- *         description: "Unauthorized."
+ *       409:
+ *         description: Update failed – access denied or already cancelled
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Error'
- *       "500":
- *         description: "Server error."
+ *       404:
+ *         description: Appointment not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Server error
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
+
 
 router.patch(
   "/:id/canceled-by-provider",
@@ -149,8 +182,9 @@ router.patch(
  * @swagger
  * /appointment/{id}/canceled-by-client:
  *   patch:
- *     summary: "Cancel an appointment by the client and send a notification"
- *     tags: [Appointments]
+ *     summary: Cancel an appointment by the client and notify the provider
+ *     tags:
+ *       - Appointments
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -160,10 +194,10 @@ router.patch(
  *         schema:
  *           type: string
  *           format: uuid
- *         description: "ID of the appointment"
+ *         description: The ID of the appointment to cancel
  *     responses:
  *       200:
- *         description: "Appointment successfully cancelled"
+ *         description: Appointment successfully cancelled
  *         content:
  *           application/json:
  *             schema:
@@ -172,28 +206,40 @@ router.patch(
  *                 message:
  *                   type: string
  *                   example: Appointment successfully cancelled
- *                 appointment: { $ref: '#/components/schemas/appointment' }
+ *                 appointment:
+ *                   $ref: '#/components/schemas/appointment'
  *       400:
- *         description: "Invalid ID format"
+ *         description: Invalid appointment ID format
  *         content:
  *           application/json:
- *             schema: { $ref: '#/components/schemas/Error' }
- *       409:
- *         description: "Update failed: access denied for appointment"
- *         content:
- *           application/json:
- *             schema: {$ref: '#/components/schemas/Error'}
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  *       401:
- *         description: "Unauthorized"
+ *         description: Unauthorized
  *         content:
  *           application/json:
- *             schema: { $ref: '#/components/schemas/Error' }
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       404:
+ *         description: Appointment not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       409:
+ *         description: Update failed – access denied or already cancelled
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  *       500:
- *         description: "Server error"
+ *         description: Server error
  *         content:
  *           application/json:
- *             schema: { $ref: '#/components/schemas/Error' }
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
+
 
 router.patch(
   "/:id/canceled-by-client",

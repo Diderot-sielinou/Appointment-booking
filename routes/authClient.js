@@ -10,6 +10,7 @@ const router = express.Router()
  *   name: Authentication
  *   description: Registration management and customer login
  */
+
 /**
  * @swagger
  * /auth-client/register:
@@ -104,7 +105,7 @@ router.post('/register', registerClientValidate, registerClientHandle);
  *               properties:
  *                 message: { type: string, example: Login successful! }
  *                 token: { type: string, description: JWT token for authentication }
- *                 user: { $ref: '#/components/schemas/client' }
+ *                 client: { $ref: '#/components/schemas/client' }
  *       400:
  *         description: Validation error (e.g., missing fields).
  *         content:

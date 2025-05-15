@@ -32,12 +32,26 @@ app.set('port', port);
 /**
  * Create HTTP server.
 */
+// const corsOptions = {
+//   origin: [
+//     'http://localhost:3000',
+//     'http://127.0.0.1:3000',
+//   ],
+//   credentials: true,
+// };
+
+const allowedOrigins = process.env.NODE_ENV === 'production'
+  ? ['https://'] 
+  : [`http://localhost:${process.env.PORT||3000}`];
+
+
 
 const server = http.createServer(app);
 // Create Socket.IO
 const io = new Server(server, {
   cors: {
-    origin: '*'
+    origin: allowedOrigins,
+    credentials: true,
   }
 });
 app.set('io',io)

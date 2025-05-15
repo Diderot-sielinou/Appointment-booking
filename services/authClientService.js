@@ -45,6 +45,7 @@ export async function registerClient({
 }
 
 const signJwt = promisify(jwt.sign);
+
 export async function loginClient({ email, password }) {
   const client = await getClientInfoByEmailModel(email);
   if (!client) {
