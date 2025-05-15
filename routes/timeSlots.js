@@ -1,14 +1,15 @@
 import express from "express";
 const router = express.Router();
 import authmiddleware from "../middleware/authmiddleware.js";
+import authorizeRoles from '../middleware/authRoleMiddleware.js'
 import {
   bookedTimeSlotHandle,
   createTimeSlotHandle,
-  deletTimeSlotHandle,
+  deleteTimeSlotHandle,
   getAllTimeSlotHandle,
   searchTimeSlotHandle,
-  updateTimeSlot,
-} from "../controller/time-slots-controller.js";
+  updateTimeSlotHandle,
+} from "../controller/timeSlotsController.js";
 import {
   createTimeSlotValidator,
   readIdValidator,
@@ -71,6 +72,7 @@ router.post(
   "/create",
   createTimeSlotValidator,
   authmiddleware,
+  authorizeRoles('provider'),
   createTimeSlotHandle
 );
 
@@ -97,7 +99,7 @@ router.post(
  *             schema: { $ref: '#/components/schemas/Error' }
  */
 
-router.get("/", authmiddleware, getAllTimeSlotHandle);
+router.get("/", authmiddleware,authorizeRoles('provider'), getAllTimeSlotHandle);
 
 /**
  * @swagger
@@ -150,7 +152,8 @@ router.delete(
   "/:id/delete-time-slot",
   readIdValidator,
   authmiddleware,
-  deletTimeSlotHandle
+  authorizeRoles('provider'),
+  deleteTimeSlotHandle
 );
 
 /**
@@ -218,7 +221,8 @@ router.put(
   createTimeSlotValidator,
   readIdValidator,
   authmiddleware,
-  updateTimeSlot
+  authorizeRoles('provider'),
+  updateTimeSlotHandle
 );
 
 /**
@@ -279,7 +283,7 @@ router.put(
  *             schema: { $ref: '#/components/schemas/Error' }
  */
 
-router.get("/search", authmiddleware, searchTimeSlotHandle);
+router.get("/search", authmiddleware,authorizeRoles('provider','client'), searchTimeSlotHandle);
 
 /**
  * @swagger
@@ -331,10 +335,11 @@ router.get("/search", authmiddleware, searchTimeSlotHandle);
  *           application/json:
  *             schema: { $ref: '#/components/schemas/Error' }
  */
-router.get(
+router.post(
   "/booked/:id",
   readIdValidator,
   authmiddleware,
+  authorizeRoles('client'),
   bookedTimeSlotHandle
 );
 

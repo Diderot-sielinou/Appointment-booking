@@ -1,4 +1,5 @@
 import Joi from "joi";
+import AppError from "../utils/AppError.js"
 
 const timeSlotSchema = Joi.object({
   startTime: Joi.string()
@@ -61,6 +62,6 @@ const searchChema = Joi.object({
 export const searchTimeSlotValidator = (objet) => {
   const { error } = searchChema.validate(objet);
   if (error) {
-    throw new Error(`Validation failed: ${error.details[0].message}`);
+    throw new AppError(`Validation failed: ${error.details[0].message}`,400);
   }
 };

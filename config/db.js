@@ -1,13 +1,19 @@
 import logger from "../utils/logger.js";
 import pg from "pg";
-import dotenv from 'dotenv';
+import dotenv from "dotenv";
 dotenv.config();
-
 
 const { Pool } = pg;
 
-const { DB_USER, DB_PASSWORD, DB_HOST, DB_NAME, DB_PORT, NODE_ENV,DB_NAME_TEST } =
-  process.env;
+const {
+  DB_USER,
+  DB_PASSWORD,
+  DB_HOST,
+  DB_NAME,
+  DB_PORT,
+  NODE_ENV,
+  DB_NAME_TEST,
+} = process.env;
 
 if (!DB_HOST || !DB_PASSWORD || !DB_NAME || !DB_USER || !DB_PORT) {
   logger.error(
@@ -127,39 +133,70 @@ const initialzeDbSchema = async () => {
 
     logger.info("successfully created index");
 
+    //create the pg_trigger fuction
     await client.query(`
-      CREATE OR REPLACE FUNCTION update_updated_at_column()
-      RETURNS TRIGGER AS $$
-      BEGIN
-         NEW.updated_at = NOW();
-         RETURN NEW;
-      END;
-      $$ language 'plpgsql';
-  `);
+          CREATE OR REPLACE FUNCTION update_updated_at_column()
+          RETURNS TRIGGER AS $$
+          BEGIN
+            NEW.updated_at = CURRENT_TIMESTAMP;
+            RETURN NEW;
+          END;
+          $$ LANGUAGE plpgsql;
+        `);
     logger.debug("update_updated_at_column function ensured.");
+    //----------------------------------
+    await client.query(`
+      DO $$ BEGIN
+        IF NOT EXISTS ( SELECT 1 FROM pg_trigger
+          WHERE tgname = 'set_updated_at_service_providers') THEN 
+          CREATE TRIGGER set_updated_at_service_providers
+          BEFORE UPDATE ON service_providers 
+          FOR EACH ROW 
+          EXECUTE FUNCTION update_updated_at_column();
+        END IF;
+      END $$;
+    `);
+    logger.debug("service_providers update_at Trigger is checked and created");
+      //----------------------------------------------
+    await client.query(`
+      DO $$ BEGIN
+        IF NOT EXISTS ( SELECT 1 FROM pg_trigger
+          WHERE tgname = 'set_updated_at_clients') THEN 
+          CREATE TRIGGER set_updated_at_clients
+          BEFORE UPDATE ON clients
+          FOR EACH ROW 
+          EXECUTE FUNCTION update_updated_at_column();
+        END IF;
+      END $$;
+    `);
+    logger.debug("clients update_at Trigger is checked and created");
+      //--------------------------------------------------------------------
+    await client.query(`
+      DO $$ BEGIN
+        IF NOT EXISTS ( SELECT 1 FROM pg_trigger
+          WHERE tgname = 'set_updated_at_time_slots') THEN 
+          CREATE TRIGGER set_updated_at_time_slots
+          BEFORE UPDATE ON time_slots
+          FOR EACH ROW 
+          EXECUTE FUNCTION update_updated_at_column();
+        END IF;
+      END $$;
+    `);
+    logger.debug("time_slots update_at Trigger is checked and created");
+    //----------------------------------------------------------------------------------------
+    await client.query(`
+      DO $$ BEGIN
+        IF NOT EXISTS ( SELECT 1 FROM pg_trigger
+          WHERE tgname = 'set_updated_at_appointment') THEN 
+          CREATE TRIGGER set_updated_at_appointment
+          BEFORE UPDATE ON appointment
+          FOR EACH ROW 
+          EXECUTE FUNCTION update_updated_at_column();
+        END IF;
+      END $$;
+    `);
+    logger.debug("appointment update_at Trigger is checked and created");
 
-    //-- tigger for service_providers
-  //   await client.query(`CREATE TRIGGER trg_service_providers_updated_at
-  //                      BEFORE UPDATE ON service_providers
-  //                      FOR EACH ROW
-  //                      EXECUTE FUNCTION update_modified_at();`);
-  // logger.debug("service_providers update_at Trigger is checked and created")
-    //-- tigger for clients
-    // await client.query(`CREATE TRIGGER trg_clients_updated_at
-    //                     BEFORE UPDATE ON clients
-    //                     FOR EACH ROW
-    //                     EXECUTE FUNCTION update_modified_at();`);
-    //--tigger for time_slots
-    // await client.query(`CREATE TRIGGER trg_time_slots_updated_at
-    //                     BEFORE UPDATE ON time_slots
-    //                     FOR EACH ROW
-    //                     EXECUTE FUNCTION update_modified_at();`);
-    //-- tigeger for appointment
-    // await client.query(`CREATE TRIGGER trg_appointment_updated_at
-    //                     BEFORE UPDATE ON appointment
-    //                     FOR EACH ROW
-    //                     EXECUTE FUNCTION update_modified_at();`);
-    
   } catch (error) {
     logger.error(`Error while initializing the schema`, error);
     process.exit(1);
