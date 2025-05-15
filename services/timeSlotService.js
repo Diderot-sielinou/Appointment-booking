@@ -145,7 +145,7 @@ export async function bookedTimeSlot({ clientId, timeSlotId, io }) {
   try {
     await client.query("BEGIN");
 
-    // 🔐 requete qui Verrouiller la ligne pour éviter les races conditions
+    // 🔐 query that Locks the row to avoid race conditions
     const timeSlot = await getTimeSlotForUpdateModel(client, timeSlotId);
 
     if (!timeSlot) {

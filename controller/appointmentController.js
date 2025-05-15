@@ -1,17 +1,17 @@
 import { query } from "../config/db.js";
+import {
+  cancelAppointmentByClient,
+  cancelAppointmentByProvider,
+  getAllAppointmentClient,
+  getAllAppointmentProvider,
+} from "../services/appointmentService.js";
 import logger from "../utils/logger.js";
 
 export async function getAllAppointmentClientHandle(req, res, next) {
   const clientId = req.user.id;
-  if (!clientId) {
-    logger.warn("Client ID is missing from request user.");
-    return res.status(400).json({ message: "Client ID is required." });
-  }
+
   try {
-    const getAppointmentQuery = `SELECT * FROM appointment
-                                 WHERE client_id = $1 `;
-    const getAllTimeSlotResult = await query(getAppointmentQuery, [clientId]);
-    const results = getAllTimeSlotResult.rows;
+    const results = await getAllAppointmentClient(clientId);
     logger.info(`Successfully retrieved appointments for client ${clientId}`);
     return res.status(200).json({
       message: "Appointments retrieved successfully",
@@ -22,23 +22,14 @@ export async function getAllAppointmentClientHandle(req, res, next) {
       `Error retrieving appointments for client ${clientId}: `,
       error
     );
-    return res.status(error.status || 500).json({
-      message: error.message || "Server error while retrieving appointments",
-    });
+    next(error);
   }
 }
 
 export async function getAllAppointmentProviderHandle(req, res, next) {
   const providerId = req.user.id;
-  if (!providerId) {
-    logger.warn("provider ID is missing from request user.");
-    return res.status(400).json({ message: "Client ID is required." });
-  }
   try {
-    const getAppointmentQuery = `SELECT * FROM appointment
-                                 WHERE provider_id = $1 `;
-    const getAllTimeSlotResult = await query(getAppointmentQuery, [providerId]);
-    const results = getAllTimeSlotResult.rows;
+    const results = await getAllAppointmentProvider(providerId);
     logger.info(
       `Successfully retrieved appointments for provider ${providerId}`
     );
@@ -51,169 +42,54 @@ export async function getAllAppointmentProviderHandle(req, res, next) {
       `Error retrieving appointments for provider ${providerId}: `,
       error
     );
-    return res.status(error.status || 500).json({
-      message: error.message || "Server error while retrieving appointments",
-    });
+    next(error);
   }
 }
 
-export async function CancelAppointmentByProviderHandle(req, res, next) {
+export async function cancelAppointmentByProviderHandle(req, res, next) {
   const providerId = req.user.id;
   const appointmentId = req.params.id;
   const io = req.app.get("io");
-  if (!providerId) {
-    logger.warn("provider ID is missing from request .");
-    return res.status(400).json({ message: "Client ID is required." });
-  }
 
   try {
-    //check if the appointment exists and concerns the provider
-    const checkAppointmentQuery = `SELECT * FROM appointment
-                                   WHERE id=$1 AND provider_id = $2`;
-    const checkResult = await query(checkAppointmentQuery, [
-      appointmentId,
+    const appointment = await cancelAppointmentByProvider({
       providerId,
-    ]);
-    logger.info(
-      `Checking existence of appointment ${appointmentId} on database`
-    );
-
-    if (checkResult.rows.length === 0) {
-      logger.warn(`No appointment found with ID ${appointmentId}`);
-      return res.status(404).json({ message: "Appointment not found." });
-    }
-
-    const associatedTimeSlotId = checkResult.rows[0].time_slot_id;
-    const clientId = checkResult.rows[0].client_id;
-
-    //Update appointment status
-    const updateStatusAppointmentQuery = `UPDATE  appointment SET status =$1
-                                              WHERE  id=$2 AND provider_id = $3
-                                              RETURNING *`;
-    const updateResult = await query(updateStatusAppointmentQuery, [
-      "cancelled_by_provider",
       appointmentId,
-      providerId,
-    ]);
-    if (updateResult.rows.length === 0) {
-      logger.warn(
-        `Update failed: access denied for appointment ID ${appointmentId}, provider ID ${providerId}`
-      );
-      return res
-        .status(409)
-        .json({ message: "Update failed: access denied for appointment" });
-    }
+      io,
+    });
 
-    // Free up the time slot
-    const updateAssociatedTimeSlotQuery = `UPDATE time_slots SET is_reserved=$1
-                                           WHERE id = $2`;
-    await query(updateAssociatedTimeSlotQuery, [false, associatedTimeSlotId]);
-
-    logger.info(
-      `appointment ${appointmentId} updated Successfully by provider ${providerId}`
-    );
-    //  Notification au provider et client
-    io.to(providerId).emit("appointment_cancelled", {
-      message: "The appointment has been cancelled ",
-      appointmentId,
-    });
-    io.to(clientId).emit("appointment_cancelled", {
-      message: "The appointment has been cancelled by the provider",
-      appointmentId,
-    });
-    return res.status(200).json({
-      message: "Appointment successfully cancelled.",
-      appointment: updateResult.rows[0],
-    });
+    return res.status(200).json({ appointment });
   } catch (error) {
     logger.error(
       `Error Updating appointment ${appointmentId} for provider ${providerId} : `,
       error
     );
-    return res.status(error.status || 500).json({
-      message:
-        error.message || "Server error while cancelling the appointment.",
-    });
+    next(error);
   }
 }
 
-export async function CancelAppointmentByCientHandle(req, res, next) {
+export async function CancelAppointmentByClientHandle(req, res, next) {
   const clientID = req.user.id;
   const appointmentId = req.params.id;
   const io = req.app.get("io");
-  if (!clientID) {
-    logger.warn("client ID is missing from request .");
-    return res.status(400).json({ message: "Client ID is required." });
-  }
 
   try {
-    //check if the appointment exists and concerns the provider
-    const checkAppointmentQuery = `SELECT * FROM appointment
-                                   WHERE id=$1 AND client_id = $2`;
-    const checkResult = await query(checkAppointmentQuery, [
-      appointmentId,
+    const appointment = await cancelAppointmentByClient({
       clientID,
-    ]);
-    logger.info(
-      `Checking existence of appointment ${appointmentId} on database`
-    );
-
-    
-    if (checkResult.rows.length === 0) {
-      logger.warn(`No appointment found with ID ${appointmentId}`);
-      return res.status(404).json({ message: "Appointment not found." });
-    }
-    
-    const providerId = checkResult.row[0].provider_id
-    const associatedTimeSlotId = checkResult.rows[0].time_slot_id;
-
-    //Update appointment status
-    const updateStatusAppointmentQuery = `UPDATE  appointment SET status =$1
-                                              WHERE  id=$2 AND client_id = $3
-                                              RETURNING *`;
-    const updateResult = await query(updateStatusAppointmentQuery, [
-      "cancelled_by_client",
       appointmentId,
-      clientID,
-    ]);
-    if (updateResult.rows.length === 0) {
-      logger.warn(
-        `Update failed: access denied for appointment ID ${appointmentId}, client ID ${clientID}`
-      );
-      return res
-        .status(409)
-        .json({ message: "Update failed: access denied for appointment" });
-    }
-
-    // Free up the time slot
-    const updateAssociatedTimeSlotQuery = `UPDATE time_slots SET is_reserved=$1
-                                           WHERE id = $2`;
-    await query(updateAssociatedTimeSlotQuery, [false, associatedTimeSlotId]);
-
-    logger.info(
-      `appointment ${appointmentId} updated Successfully by client ${clientID}`
-    );
-    //  Notification au provider et client
-    io.to(providerId).emit("appointment_cancelled", {
-      message: "The appointment has been cancelled by the client ",
-      appointmentId,
+      io,
     });
-    io.to(clientID).emit("appointment_cancelled", {
-      message: "The appointment has been cancelled ",
-      appointmentId,
-    });
+
     return res.status(200).json({
       message: "Appointment successfully cancelled.",
-      appointment: updateResult.rows[0],
+      appointment,
     });
   } catch (error) {
     logger.error(
-      `Error Updating appointment ${appointmentId} for client ${clientID} : `,
+      `Error cancelling appointment ${appointmentId} for client ${clientID}:`,
       error
     );
-    return res.status(error.status || 500).json({
-      message:
-        error.message || "Server error while cancelling the appointment.",
-    });
+    next(error);
   }
 }
+

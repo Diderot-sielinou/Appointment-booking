@@ -1,8 +1,9 @@
 import express from "express";
 import authmiddleware from "../middleware/authmiddleware.js";
+import authorizeRoles from "../middleware/authRoleMiddleware.js";
 import {
-  CancelAppointmentByCientHandle,
-  CancelAppointmentByProviderHandle,
+  CancelAppointmentByClientHandle,
+  cancelAppointmentByProviderHandle,
   getAllAppointmentClientHandle,
   getAllAppointmentProviderHandle,
 } from "../controller/appointmentController.js";
@@ -41,7 +42,12 @@ const router = express.Router();
  *               $ref: '#/components/schemas/Error'
  */
 
-router.get("/client", authmiddleware, getAllAppointmentClientHandle);
+router.get(
+  "/client",
+  authmiddleware,
+  authorizeRoles("client"),
+  getAllAppointmentClientHandle
+);
 
 /**
  * @swagger
@@ -68,7 +74,12 @@ router.get("/client", authmiddleware, getAllAppointmentClientHandle);
  *               $ref: '#/components/schemas/Error'
  */
 
-router.get("/provider", authmiddleware, getAllAppointmentProviderHandle);
+router.get(
+  "/provider",
+  authmiddleware,
+  authorizeRoles("provider"),
+  getAllAppointmentProviderHandle
+);
 
 /**
  * @swagger
@@ -126,15 +137,13 @@ router.get("/provider", authmiddleware, getAllAppointmentProviderHandle);
  *               $ref: '#/components/schemas/Error'
  */
 
-
-
 router.patch(
   "/:id/canceled-by-provider",
   readIdValidator,
   authmiddleware,
-  CancelAppointmentByProviderHandle
+  authorizeRoles("provider"),
+  cancelAppointmentByProviderHandle
 );
-
 
 /**
  * @swagger
@@ -186,12 +195,12 @@ router.patch(
  *             schema: { $ref: '#/components/schemas/Error' }
  */
 
-
 router.patch(
   "/:id/canceled-by-client",
   readIdValidator,
   authmiddleware,
-  CancelAppointmentByCientHandle
+  authorizeRoles("client"),
+  CancelAppointmentByClientHandle
 );
 
 export default router;
